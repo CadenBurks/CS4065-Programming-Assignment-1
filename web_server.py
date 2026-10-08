@@ -35,8 +35,12 @@ def send_bytes(file , connection: socket):
         connection (socket): The connection socket
     """
     while True:
-        bytes = file.read(1024)
-        connection.send(bytes)
+        chunk = file.read(1024)
+
+        if not chunk:
+            break
+
+        connection.sendall(chunk)
 
 def handle_request(connection: socket):
     """
@@ -85,15 +89,15 @@ def handle_request(connection: socket):
         print(entity_body)
     print("\n------------\n")
 
-    connection.send(status_line.encode())
-    connection.send(content_type_line.encode())
-    connection.send(CRLF.encode())
+    connection.sendall(status_line.encode())
+    connection.sendall(content_type_line.encode())
+    connection.sendall(CRLF.encode())
 
     if file_exists:
         with open(file_name, "rb") as file:
             send_bytes(file, connection)
     else:
-        connection.send(entity_body.encode())
+        connection.sendall(entity_body.encode())
 
     connection.close()
 
