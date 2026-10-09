@@ -10,6 +10,8 @@ from ftp_client import FtpClient
 
 PORT = 6789
 CRLF = "\r\n"
+USER = "caden"
+PASSWORD = "burks"
 
 def content_type(file_name: str):
     """
@@ -93,7 +95,7 @@ def handle_request(connection: socket):
             client = FtpClient()
 
             # Connect to the FTP server
-            client.connect("caden", "burks")
+            client.connect(USER, PASSWORD)
 
             # Retrieve the file from the FTP server, remember you need to
             # first upload this file to the FTP server under your user
