@@ -6,6 +6,7 @@ Caden Burks-D'Amico
 from socket import *
 import threading
 import os
+from ftp_client import FtpClient
 
 PORT = 6789
 CRLF = "\r\n"
@@ -24,6 +25,8 @@ def content_type(file_name: str):
         return "image/gif"
     if file_name.endswith((".JPEG", ".jpeg", ".JPG", ".jpg")):
         return "image/jpeg"
+    if file_name.endswith((".TXT", ".txt")):
+        return "text/plain"
     return "application/octet-stream"
     
 
@@ -51,6 +54,9 @@ def handle_request(connection: socket):
     file = connection.makefile()
     with file:
         request_line = file.readline()
+        if not request_line:
+            connection.close()
+            return
 
         print("Request:\n------------")
         print(request_line.strip())
@@ -66,9 +72,7 @@ def handle_request(connection: socket):
     request_tokens = request_line.split(" ")
     file_name = "." + request_tokens[1]
 
-    file_exists = True
-    if not os.path.isfile(file_name):
-        file_exists = False
+    file_exists = os.path.isfile(file_name)
 
     status_line = ""
     content_type_line = ""
@@ -77,9 +81,31 @@ def handle_request(connection: socket):
         status_line = "HTTP/1.0 200 OK" + CRLF
         content_type_line = "Content-type: " + content_type(file_name) + CRLF
     else:
-        status_line = "HTTP/1.0 404 Not Found" + CRLF
-        content_type_line = "Content-type: text/html" + CRLF
-        entity_body = "<HTML>" + "<HEAD><TITLE>Not Found</TITLE></HEAD>" + "<BODY>Not Found</BODY></HTML>"
+        if content_type(file_name) != "text/plain":
+            status_line = "HTTP/1.0 404 Not Found" + CRLF
+            content_type_line = "Content-type: text/html" + CRLF
+            entity_body = "<HTML>" + "<HEAD><TITLE>Not Found</TITLE></HEAD>" + "<BODY>Not Found</BODY></HTML>"
+        else:
+            status_line = "HTTP/1.0 200 OK" + CRLF
+            content_type_line = "Content-type: " + content_type(file_name) + CRLF
+            
+            # Create an instance of ftp client
+            client = FtpClient()
+
+            # Connect to the FTP server
+            client.connect("caden", "burks")
+
+            # Retrieve the file from the FTP server, remember you need to
+            # first upload this file to the FTP server under your user
+            # FTP directory
+            client.get_file(file_name)
+
+            # Disconnect from FTP server
+            client.disconnect()
+
+            # Assign input stream to read the recently FTP-downloaded file
+            file_exists = os.path.isfile(file_name)
+
 
     print()
     print("Response:\n------------")

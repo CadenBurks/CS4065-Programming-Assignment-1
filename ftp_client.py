@@ -5,6 +5,7 @@ Caden Burks-D'Amico
 
 from socket import *
 import re
+import os
 
 SERVER_NAME = "localhost"
 FTP_PORT = 21
@@ -61,14 +62,12 @@ class FtpClient():
             self.current_response = self.__send_command("PASV", 227)
             data_port = self.__extract_data_port(self.current_response)
 
-            print(data_port)
-
             # Connect to the data port
             data_socket = socket(AF_INET, SOCK_STREAM)
             data_socket.connect((SERVER_NAME, data_port))
 
             # Download file from FTP server
-            self.__send_command(f"RETR {file_name}", 150)
+            self.__send_command(f"RETR {os.path.basename(file_name)}", 150)
 
             # Check if the transfer was successful
             self.__check_response(226)
